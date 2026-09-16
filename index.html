@@ -10,17 +10,19 @@
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body {
-      background: #121212;
-      height: 100%;
-      width: 100%;
+      background: #0f141c;
+      height: 100vh;
+      width: 100vw;
       overflow: hidden;
     }
     #term {
       height: 100vh;
       width: 100vw;
-      padding: 10px;
+      padding: 8px 12px;
     }
-    .xterm { height: 100%; }
+    .xterm .xterm-viewport {
+      overflow-y: auto !important;
+    }
   </style>
 </head>
 <body>
@@ -28,27 +30,33 @@
   <script>
     const term = new Terminal({
       cursorBlink: true,
-      fontSize: 14,
+      fontSize: 13,
+      lineHeight: 1.25,
+      scrollback: 5000,
       fontFamily: 'Consolas, "Courier New", monospace',
       theme: {
-        background: '#121212',
-        foreground: '#e5e7eb'
+        background: '#0f141c',
+        foreground: '#e2e8f0',
+        cursor: '#38bdf8'
       }
     });
     const fitAddon = new FitAddon.FitAddon();
     term.loadAddon(fitAddon);
     term.open(document.getElementById('term'));
-    fitAddon.fit();
-    window.addEventListener('resize', () => fitAddon.fit());
 
-    // Pipe console.log into xterm
+    function resizeTerm() {
+      try { fitAddon.fit(); } catch(e) {}
+    }
+    resizeTerm();
+    window.addEventListener('resize', resizeTerm);
+
     console.log = function(...args) {
       const msg = args.map(x => typeof x === 'object' ? JSON.stringify(x) : String(x)).join(' ');
       term.writeln(msg.replace(/\r?\n/g, '\r\n'));
+      term.scrollToBottom();
     };
     console.clear = function() { term.clear(); };
 
-    // Browser Readline Adapter
     let _cb = null;
     let _buf = '';
 
@@ -79,6 +87,7 @@
           question: function(prompt, cb) {
             term.write(prompt.replace(/\r?\n/g, '\r\n'));
             _cb = cb;
+            term.scrollToBottom();
           },
           close: function() {
             term.writeln('\r\n[Process finished]');
@@ -87,10 +96,11 @@
       }
     };
 
-    // ─────────────────────────────────────────────────────────────
-    // EXACT ORIGINAL mandi_sandbox.js LOGIC & MENU (100% UNTOUCHED)
-    // ─────────────────────────────────────────────────────────────
-/**
+    // Ensure DOM is fully mounted before running engine
+    setTimeout(() => {
+      resizeTerm();
+      try {
+        /**
  * ================================================================
  * MANDI QUEUE ENGINE — Interactive Menu-Driven Sandbox
  * ================================================================
@@ -788,6 +798,10 @@ async function main() {
 
 main().catch(console.error);
 
+      } catch(err) {
+        term.writeln('\x1b[31mRuntime Error: ' + err.message + '\x1b[0m');
+      }
+    }, 100);
   </script>
 </body>
 </html>
