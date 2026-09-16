@@ -106,7 +106,7 @@ class Engine {
 
   queue(mid) {
     return Array.from(this.B.values())
-      .filter(b=>b.mid===mid && b.st===Status.IN_QUEUE)
+      .filter(b=>b.mid===mid && b.day===this.day && b.st===Status.IN_QUEUE)
       .sort((a,b)=> b.pri!==a.pri ? b.pri-a.pri : a.seq-b.seq);
   }
 
@@ -190,14 +190,6 @@ class Engine {
       console.log(`  ❌ BARDANA EXHAUSTED (${ds.bags} bags, need ${BAGS})`);
       this.log('Recommend: Pause mandi & reschedule.');
       return null;
-    }
-    if(ds.store>=95){
-      console.log(`  ❌ STORAGE FULL (${ds.store}%) — No space for more grain.`);
-      this.log('Recommend: Request FCI lifting. Pause mandi if needed.');
-      return null;
-    }
-    if(ds.store>=80){
-      console.log(`  ⚠️  STORAGE WARNING: ${ds.store}% — Request FCI lifting soon.`);
     }
     const n=q[0];
     if(!this.move(n,Status.WEIGHING))return null;
@@ -337,7 +329,7 @@ class Engine {
         console.log(`    #${i+1}  ${fn.padEnd(20)} ${b.tok}${p}${r}`);
       });
     }
-    const w=Array.from(this.B.values()).filter(b=>b.mid===mid&&b.st===Status.WEIGHING);
+    const w=Array.from(this.B.values()).filter(b=>b.mid===mid&&b.day===this.day&&b.st===Status.WEIGHING);
     if(w.length){console.log(`\n  ⚖️  WEIGHING:`);w.forEach(b=>console.log(`    ${this.F.get(b.fid).name.padEnd(20)} ${b.tok}`));}
     const dr=Array.from(this.B.values()).filter(b=>b.mid===mid&&b.st===Status.DRYING);
     if(dr.length){
