@@ -74,10 +74,10 @@ class Engine {
 
   notify(fid,msg) {
     const f=this.F.get(fid);
-    const l=`  📱 → ${f.name} (${f.phone}): ${msg}`;
+    const l=`  [SMS] -> ${f.name} (${f.phone}): ${msg}`;
     this.sms.push({day:this.day, to:f.name, msg}); console.log(l);
   }
-  log(m) { console.log(`  ⚙️  ${m}`); }
+  log(m) { console.log(`  [SYS]  ${m}`); }
 
   ds(mid,d) {
     const k=`${mid}:${d}`;
@@ -94,7 +94,7 @@ class Engine {
   move(b,to) {
     const ok=TRANSITIONS[b.st]||[];
     if(!ok.includes(to)) {
-      console.log(`  ❌ ILLEGAL: ${b.st} → ${to}`);
+      console.log(`  [ERROR] ILLEGAL: ${b.st} → ${to}`);
       console.log(`     Allowed from ${b.st}: [${ok.join(', ')}]`);
       return false;
     }
@@ -127,40 +127,40 @@ class Engine {
   // ── OPERATIONS ──
 
   book(fid,mid,day,crop) {
-    if(!this.F.has(fid)){console.log(`  ❌ Farmer ${fid} not registered`);return null;}
-    if(!this.M.has(mid)){console.log(`  ❌ Mandi ${mid} not found`);return null;}
-    if(day<this.day){console.log(`  ❌ Can't book past (today=Day ${this.day})`);return null;}
+    if(!this.F.has(fid)){console.log(`  [ERROR] Farmer ${fid} not registered`);return null;}
+    if(!this.M.has(mid)){console.log(`  [ERROR] Mandi ${mid} not found`);return null;}
+    if(day<this.day){console.log(`  [ERROR] Can't book past (today=Day ${this.day})`);return null;}
     const a=this.active(fid);
-    if(a){console.log(`  ❌ ${this.F.get(fid).name} has active: ${a.tok} (${a.st})`);return null;}
+    if(a){console.log(`  [ERROR] ${this.F.get(fid).name} has active: ${a.tok} (${a.st})`);return null;}
     const ds=this.ds(mid,day);
-    if(ds.paused){console.log(`  ❌ ${this.M.get(mid).name} PAUSED: ${ds.reason}`);return null;}
-    if(ds.avail<=0){console.log(`  ❌ FULL: ${this.M.get(mid).name} Day ${day} (${ds.booked}/${ds.cap-ds.buf} booked)`);return null;}
-    if(ds.bags<BAGS) console.log(`  ⚠️  LOW BARDANA WARNING: ${ds.bags} bags left`);
+    if(ds.paused){console.log(`  [ERROR] ${this.M.get(mid).name} PAUSED: ${ds.reason}`);return null;}
+    if(ds.avail<=0){console.log(`  [ERROR] FULL: ${this.M.get(mid).name} Day ${day} (${ds.booked}/${ds.cap-ds.buf} booked)`);return null;}
+    if(ds.bags<BAGS) console.log(`  [WARN]  LOW BARDANA WARNING: ${ds.bags} bags left`);
 
     const t=this.tok(mid,day);
     const b=new Booking(fid,mid,day,crop,t);
     b.hist.push({st:Status.BOOKED,d:this.day});
     this.B.set(t,b); ds.booked++;
     this.log(`BOOKED: ${this.F.get(fid).name} → ${this.M.get(mid).name} Day ${day} [${t}]`);
-    this.notify(fid,`✅ Token: ${t} | ${this.M.get(mid).name} Day ${day} | ${crop}`);
+    this.notify(fid,`[OK] Token: ${t} | ${this.M.get(mid).name} Day ${day} | ${crop}`);
     return b;
   }
 
   cancel(tok) {
-    if(!this.B.has(tok)){console.log(`  ❌ Token ${tok} not found`);return false;}
+    if(!this.B.has(tok)){console.log(`  [ERROR] Token ${tok} not found`);return false;}
     const b=this.B.get(tok);
-    if(b.st!==Status.BOOKED){console.log(`  ❌ Can only cancel BOOKED tokens (current: ${b.st})`);return false;}
+    if(b.st!==Status.BOOKED){console.log(`  [ERROR] Can only cancel BOOKED tokens (current: ${b.st})`);return false;}
     b.st=Status.CANCELLED; b.hist.push({st:Status.CANCELLED,d:this.day});
     const ds=this.ds(b.mid,b.day); ds.booked=Math.max(0,ds.booked-1);
     this.log(`CANCELLED: ${tok}`);
-    this.notify(b.fid,`❌ Token ${tok} cancelled. Book again anytime.`);
+    this.notify(b.fid,`[ERROR] Token ${tok} cancelled. Book again anytime.`);
     return true;
   }
 
   checkin(tok) {
-    if(!this.B.has(tok)){console.log(`  ❌ Token ${tok} not found`);return false;}
+    if(!this.B.has(tok)){console.log(`  [ERROR] Token ${tok} not found`);return false;}
     const b=this.B.get(tok);
-    if(b.day!==this.day){console.log(`  ❌ Token for Day ${b.day}, today is Day ${this.day}`);return false;}
+    if(b.day!==this.day){console.log(`  [ERROR] Token for Day ${b.day}, today is Day ${this.day}`);return false;}
 
     if(b.st===Status.RE_INSPECTION) {
       if(!this.move(b,Status.IN_QUEUE))return false;
@@ -168,7 +168,7 @@ class Engine {
       this.ds(b.mid,this.day).checkedIn++;
       this.ds(b.mid,this.day).drying=Math.max(0,this.ds(b.mid,this.day).drying-1);
       const p=this.qpos(b);
-      this.notify(b.fid,`🔄 Re-inspection checkin | ${tok} | Queue #${p}`);
+      this.notify(b.fid,`[RE-SYNC] Re-inspection checkin | ${tok} | Queue #${p}`);
       return true;
     }
 
@@ -178,45 +178,45 @@ class Engine {
     b.pri = b.resc>0 ? 500+b.resc*100 : 0;
     this.ds(b.mid,this.day).checkedIn++;
     const p=this.qpos(b);
-    this.notify(b.fid,`✅ Checked in | ${tok} | Queue #${p}`);
+    this.notify(b.fid,`[OK] Checked in | ${tok} | Queue #${p}`);
     return true;
   }
 
   callNext(mid) {
     const q=this.queue(mid);
-    if(!q.length){console.log(`  ℹ️  Queue empty at ${this.M.get(mid).name}`);return null;}
+    if(!q.length){console.log(`  [INFO]  Queue empty at ${this.M.get(mid).name}`);return null;}
     const ds=this.ds(mid,this.day);
     if(ds.bags<BAGS){
-      console.log(`  ❌ BARDANA EXHAUSTED (${ds.bags} bags, need ${BAGS})`);
+      console.log(`  [ERROR] BARDANA EXHAUSTED (${ds.bags} bags, need ${BAGS})`);
       this.log('Recommend: Pause mandi & reschedule.');
       return null;
     }
     const n=q[0];
     if(!this.move(n,Status.WEIGHING))return null;
-    this.notify(n.fid,`🔔 YOUR TURN! Token ${n.tok} → Weighing Bridge`);
+    this.notify(n.fid,`[CALL] YOUR TURN! Token ${n.tok} → Weighing Bridge`);
     this.queue(mid).slice(0,2).forEach((b,i)=>
       this.notify(b.fid,`Queue update: Position #${i+1}`));
     return n;
   }
 
   accept(tok,wt) {
-    if(!this.B.has(tok)){console.log(`  ❌ Token not found`);return false;}
+    if(!this.B.has(tok)){console.log(`  [ERROR] Token not found`);return false;}
     const b=this.B.get(tok);
-    if(b.st!==Status.WEIGHING){console.log(`  ❌ ${tok} is ${b.st}, not WEIGHING`);return false;}
+    if(b.st!==Status.WEIGHING){console.log(`  [ERROR] ${tok} is ${b.st}, not WEIGHING`);return false;}
     b.wt=wt; const r=MSP[b.crop]||2000; b.amt=wt*r;
     if(!this.move(b,Status.ACCEPTED))return false;
     if(!this.move(b,Status.PAYMENT_INITIATED))return false;
     const ds=this.ds(b.mid,this.day);
     ds.done++; ds.bags=Math.max(0,ds.bags-Math.floor(wt*2));
     ds.store=Math.min(100,ds.store+Math.floor(wt*0.5));
-    this.notify(b.fid,`✅ ${wt}q × ₹${r} = ₹${b.amt.toLocaleString('en-IN')} | DBT INITIATED`);
+    this.notify(b.fid,`[OK] ${wt}q × ₹${r} = ₹${b.amt.toLocaleString('en-IN')} | DBT INITIATED`);
     return true;
   }
 
   reject(tok,moist) {
-    if(!this.B.has(tok)){console.log(`  ❌ Token not found`);return null;}
+    if(!this.B.has(tok)){console.log(`  [ERROR] Token not found`);return null;}
     const b=this.B.get(tok);
-    if(b.st!==Status.WEIGHING){console.log(`  ❌ ${tok} is ${b.st}, not WEIGHING`);return null;}
+    if(b.st!==Status.WEIGHING){console.log(`  [ERROR] ${tok} is ${b.st}, not WEIGHING`);return null;}
     const lim=MLIMIT[b.crop]||17; const gap=moist-lim;
     const dd=Math.max(1,Math.round(gap/2)); const rd=this.day+dd;
     b.moist=moist;
@@ -229,7 +229,7 @@ class Engine {
     rb.st=Status.RE_INSPECTION; rb.parent=b.bid; rb.pri=800;
     rb.hist.push({st:Status.RE_INSPECTION,d:this.day,note:'auto'});
     this.B.set(rt,rb);
-    this.notify(b.fid,`❌ Moisture ${moist}% (limit ${lim}%) | Dry ~${dd}d | Re-inspect Day ${rd} | Token: ${rt}`);
+    this.notify(b.fid,`[ERROR] Moisture ${moist}% (limit ${lim}%) | Dry ~${dd}d | Re-inspect Day ${rd} | Token: ${rt}`);
     return rt;
   }
 
@@ -237,7 +237,7 @@ class Engine {
     const m=this.M.get(mid);
     this.ds(mid,this.day).paused=true; this.ds(mid,this.day).reason=reason;
     this.ds(mid,this.day+1).paused=true; this.ds(mid,this.day+1).reason=reason;
-    this.log(`🔴 PAUSED: ${m.name} | ${reason}`);
+    this.log(`[PAUSED] PAUSED: ${m.name} | ${reason}`);
     this.log('Farmers IN_QUEUE/WEIGHING stay (physically present).');
 
     const resched=Array.from(this.B.values()).filter(
@@ -245,7 +245,7 @@ class Engine {
     let c=0;
     for(const bk of resched) {
       const {d:nd,m:nm}=this.findSlot(mid,this.day+2);
-      if(!nd){this.notify(bk.fid,`⚠️ ${m.name} PAUSED. No nearby slots. DO NOT travel.`);continue;}
+      if(!nd){this.notify(bk.fid,`[WARN] ${m.name} PAUSED. No nearby slots. DO NOT travel.`);continue;}
       bk.st=Status.RESCHEDULED; bk.hist.push({st:Status.RESCHEDULED,d:this.day});
       const nt=this.tok(nm,nd);
       const nb=new Booking(bk.fid,nm,nd,bk.crop,nt);
@@ -254,8 +254,8 @@ class Engine {
       this.B.set(nt,nb); this.ds(nm,nd).booked++;
       const dest=this.M.get(nm).name;
       this.notify(bk.fid, nm===mid
-        ? `⚠️ Rescheduled → ${dest} Day ${nd} | Token: ${nt}`
-        : `⚠️ Rerouted → ${dest} Day ${nd} | Token: ${nt}`);
+        ? `[WARN] Rescheduled → ${dest} Day ${nd} | Token: ${nt}`
+        : `[WARN] Rerouted → ${dest} Day ${nd} | Token: ${nt}`);
       c++;
     }
     this.log(`Rescheduled ${c} farmer(s).`);
@@ -264,7 +264,7 @@ class Engine {
 
   resume(mid) {
     this.ds(mid,this.day).paused=false; this.ds(mid,this.day).reason='';
-    this.log(`🟢 RESUMED: ${this.M.get(mid).name}`);
+    this.log(`[ACTIVE] RESUMED: ${this.M.get(mid).name}`);
   }
 
   noShows(mid) {
@@ -272,7 +272,7 @@ class Engine {
       b=>b.mid===mid && b.day===this.day && b.st===Status.BOOKED);
     for(const b of ns){
       b.st=Status.NO_SHOW; b.hist.push({st:Status.NO_SHOW,d:this.day});
-      this.notify(b.fid,`⏰ MISSED: Token ${b.tok} expired.`);
+      this.notify(b.fid,`[EXPIRED] MISSED: Token ${b.tok} expired.`);
     }
     if(ns.length){
       this.ds(mid,this.day).buf+=ns.length;
@@ -294,17 +294,17 @@ class Engine {
   paid(tok) {
     if(!this.B.has(tok))return;
     const b=this.B.get(tok);
-    if(b.st!==Status.PAYMENT_INITIATED){console.log(`  ❌ ${tok} is ${b.st}`);return;}
+    if(b.st!==Status.PAYMENT_INITIATED){console.log(`  [ERROR] ${tok} is ${b.st}`);return;}
     b.st=Status.PAID; b.hist.push({st:Status.PAID,d:this.day});
-    this.notify(b.fid,`💰 ₹${b.amt.toLocaleString('en-IN')} credited!`);
+    this.notify(b.fid,`[PAID] ₹${b.amt.toLocaleString('en-IN')} credited!`);
   }
 
   nextDay() {
     this.day++;
-    console.log(`\n  ${'═'.repeat(20)} 📅 DAY ${this.day} ${'═'.repeat(20)}\n`);
+    console.log(`\n  ${'═'.repeat(20)} DAY DAY ${this.day} ${'═'.repeat(20)}\n`);
     for(const b of this.B.values())
       if(b.st===Status.RE_INSPECTION && b.day===this.day)
-        this.log(`🔔 Re-inspection due: ${b.tok} (${this.F.get(b.fid).name})`);
+        this.log(`[CALL] Re-inspection due: ${b.tok} (${this.F.get(b.fid).name})`);
   }
 
   // ── VIEWS ──
@@ -312,16 +312,16 @@ class Engine {
   showMandi(mid) {
     const m=this.M.get(mid), ds=this.ds(mid,this.day), q=this.queue(mid);
     console.log(`\n${'━'.repeat(60)}`);
-    console.log(`  📍 ${m.name} | DAY ${this.day}`);
+    console.log(`  LOCATION: ${m.name} | DAY ${this.day}`);
     console.log(`${'━'.repeat(60)}`);
-    console.log(`  Status:    ${ds.paused?'🔴 PAUSED ('+ds.reason+')':'🟢 ACTIVE'}`);
+    console.log(`  Status:    ${ds.paused?'[PAUSED] PAUSED ('+ds.reason+')':'[ACTIVE] ACTIVE'}`);
     console.log(`  Capacity:  ${ds.cap}/day (buffer:${ds.buf} drying:${ds.drying})`);
     console.log(`  Booked:${ds.booked} | CheckedIn:${ds.checkedIn} | Done:${ds.done}`);
     console.log(`  Bookable:  ${ds.avail} slot(s)`);
     console.log(`  Bardana:   ${ds.bags} bags`);
     console.log(`  Storage:   ${ds.store}%`);
     if(q.length){
-      console.log(`\n  📋 QUEUE (${q.length}):`);
+      console.log(`\n  QUEUE QUEUE (${q.length}):`);
       q.forEach((b,i)=>{
         const fn=this.F.get(b.fid).name;
         const p=b.pri?` [pri:${b.pri}]`:'';
@@ -330,10 +330,10 @@ class Engine {
       });
     }
     const w=Array.from(this.B.values()).filter(b=>b.mid===mid&&b.day===this.day&&b.st===Status.WEIGHING);
-    if(w.length){console.log(`\n  ⚖️  WEIGHING:`);w.forEach(b=>console.log(`    ${this.F.get(b.fid).name.padEnd(20)} ${b.tok}`));}
+    if(w.length){console.log(`\n  WEIGHBRIDGE:  WEIGHING:`);w.forEach(b=>console.log(`    ${this.F.get(b.fid).name.padEnd(20)} ${b.tok}`));}
     const dr=Array.from(this.B.values()).filter(b=>b.mid===mid&&b.st===Status.DRYING);
     if(dr.length){
-      console.log(`\n  ☀️  DRYING:`);
+      console.log(`\n  SUN-DRYING:  DRYING:`);
       dr.forEach(b=>{
         const ri=Array.from(this.B.values()).find(x=>x.parent===b.bid&&x.st===Status.RE_INSPECTION);
         console.log(`    ${this.F.get(b.fid).name.padEnd(20)} moist:${b.moist}% reinspect:Day ${ri?ri.day:'?'}`);
@@ -341,24 +341,24 @@ class Engine {
     }
     const bk=Array.from(this.B.values()).filter(b=>b.mid===mid&&b.day===this.day&&b.st===Status.BOOKED);
     if(bk.length){
-      console.log(`\n  📅 BOOKED (not yet arrived):`);
+      console.log(`\n  DAY BOOKED (not yet arrived):`);
       bk.forEach(b=>console.log(`    ${this.F.get(b.fid).name.padEnd(20)} ${b.tok}`));
     }
     console.log(`${'━'.repeat(60)}\n`);
   }
 
   showFarmer(fid) {
-    if(!this.F.has(fid)){console.log(`  ❌ ${fid} not found`);return;}
+    if(!this.F.has(fid)){console.log(`  [ERROR] ${fid} not found`);return;}
     const f=this.F.get(fid);
     console.log(`\n${'─'.repeat(55)}`);
-    console.log(`  👨‍🌾 ${f.name} | ${f.village}, ${f.district} | ${f.acres} acres`);
-    console.log(`  📞 ${f.phone}`);
+    console.log(`  FARMER: ${f.name} | ${f.village}, ${f.district} | ${f.acres} acres`);
+    console.log(`  PHONE: ${f.phone}`);
     const bks=Array.from(this.B.values()).filter(b=>b.fid===fid);
     if(bks.length){
-      console.log(`  📜 BOOKINGS:`);
-      const ic={BOOKED:'📅',IN_QUEUE:'⏳',WEIGHING:'⚖️',ACCEPTED:'✅',PAID:'💰',
-        CANCELLED:'❌',NO_SHOW:'⏰',RESCHEDULED:'🔄',DRYING:'☀️',RE_INSPECTION:'🔄',
-        REJECTED_MOISTURE:'💧',PAYMENT_INITIATED:'💳',CHECKED_IN:'📋'};
+      console.log(`  RECORDS: BOOKINGS:`);
+      const ic={BOOKED:'SCHEDULED',IN_QUEUE:'IN_QUEUE',WEIGHING:'WEIGHBRIDGE',ACCEPTED:'[OK]',PAID:'[PAID]',
+        CANCELLED:'[ERROR]',NO_SHOW:'[EXPIRED]',RESCHEDULED:'[RE-SYNC]',DRYING:'DRYING',RE_INSPECTION:'[RE-SYNC]',
+        REJECTED_MOISTURE:'MOISTURE',PAYMENT_INITIATED:'PAYMENT_INITIATED',CHECKED_IN:'QUEUE'};
       bks.forEach(b=>{
         let x='';
         if(b.wt)x+=` | ${b.wt}q=₹${b.amt.toLocaleString('en-IN')}`;
@@ -377,13 +377,13 @@ class Engine {
     console.log(`${'═'.repeat(62)}`);
     for(const [mid,m] of this.M.entries()){
       const ds=this.ds(mid,this.day), ql=this.queue(mid).length;
-      console.log(`  ${ds.paused?'🔴':'🟢'} ${m.name.padEnd(18)} Bkd:${String(ds.booked).padStart(2)}/${ds.cap} Q:${String(ql).padStart(2)} Done:${String(ds.done).padStart(2)} Bags:${String(ds.bags).padStart(4)} Store:${ds.store}%`);
+      console.log(`  ${ds.paused?'[PAUSED]':'[ACTIVE]'} ${m.name.padEnd(18)} Bkd:${String(ds.booked).padStart(2)}/${ds.cap} Q:${String(ql).padStart(2)} Done:${String(ds.done).padStart(2)} Bags:${String(ds.bags).padStart(4)} Store:${ds.store}%`);
     }
     console.log(`${'═'.repeat(62)}\n`);
   }
 
   showFarmers() {
-    console.log(`\n  👥 ALL FARMERS (Day ${this.day}):`);
+    console.log(`\n  FARMER REGISTRY ALL FARMERS (Day ${this.day}):`);
     console.log(`  ${'─'.repeat(55)}`);
     for(const [fid,f] of this.F.entries()){
       const a=this.active(fid);
@@ -394,26 +394,26 @@ class Engine {
   }
 
   showSlots(mid) {
-    console.log(`\n  📅 SLOT AVAILABILITY: ${this.M.get(mid).name}`);
+    console.log(`\n  DAY SLOT AVAILABILITY: ${this.M.get(mid).name}`);
     console.log(`  ${'─'.repeat(40)}`);
     for(let d=this.day; d<=this.day+6; d++){
       const ds=this.ds(mid,d);
       const bar='█'.repeat(ds.booked)+'░'.repeat(Math.max(0,ds.cap-ds.buf-ds.drying-ds.booked));
-      const st=ds.paused?'🔴 PAUSED':'';
+      const st=ds.paused?'[PAUSED] PAUSED':'';
       console.log(`  Day ${String(d).padStart(2)}: [${bar}] ${ds.booked}/${ds.cap-ds.buf} booked (${ds.avail} free) ${st}`);
     }
     console.log(`  ${'─'.repeat(40)}\n`);
   }
 
   showSMS(n=20) {
-    console.log(`\n  📱 SMS LOG (last ${n}):`);
+    console.log(`\n  [SMS] SMS LOG (last ${n}):`);
     this.sms.slice(-n).forEach(s=>
       console.log(`  [Day ${s.day}] → ${s.to}: ${s.msg}`));
     console.log('');
   }
 
   showTokens() {
-    console.log(`\n  🎫 ALL ACTIVE TOKENS:`);
+    console.log(`\n  TOKENS: ALL ACTIVE TOKENS:`);
     console.log(`  ${'─'.repeat(60)}`);
     const active=Array.from(this.B.values()).filter(b=>!TERMINAL.has(b.st));
     if(!active.length){console.log('  None.');return;}
@@ -462,7 +462,7 @@ async function main() {
     console.log('  Available Mandis:');
     for(const [mid,m] of e.M.entries()){
       const ds=e.ds(mid,e.day);
-      const icon=ds.paused?'🔴':'🟢';
+      const icon=ds.paused?'[PAUSED]':'[ACTIVE]';
       console.log(`    ${icon} ${mid} → ${m.name} (cap:${ds.cap}, booked:${ds.booked}, avail:${ds.avail})`);
     }
     return (await ask(label||'  Mandi (KNL/NLK/GHR): ')).trim().toUpperCase();
@@ -472,7 +472,7 @@ async function main() {
 
   console.log(`
 ╔══════════════════════════════════════════════════════════════╗
-║  🌾 MANDI QUEUE ENGINE — Interactive Sandbox                ║
+║  MANDIFLOW: MANDI QUEUE ENGINE — Interactive Sandbox                ║
 ║  SIH 2026 | PS 26032 | DoCA                                ║
 ║                                                             ║
 ║  Pre-loaded: 3 Mandis (KNL, NLK, GHR) | 15 Farmers (F01-15)║
@@ -484,7 +484,7 @@ async function main() {
 
   while(true) {
     console.log(`${'─'.repeat(62)}`);
-    console.log(`  📅 DAY ${e.day}                         MANDI QUEUE ENGINE`);
+    console.log(`  DAY DAY ${e.day}                         MANDI QUEUE ENGINE`);
     console.log(`${'─'.repeat(62)}`);
     console.log(`  ── FARMER ACTIONS ──              ── OPERATOR ACTIONS ──`);
     console.log(`  1.  Book Slot                     7.  Call Next in Queue`);
@@ -681,7 +681,7 @@ async function main() {
     }
 
     else {
-      console.log('  ❓ Invalid choice. Try again.');
+      console.log('  [?] Invalid choice. Try again.');
     }
   }
 }
