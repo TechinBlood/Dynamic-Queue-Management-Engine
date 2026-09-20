@@ -178,7 +178,7 @@ class Engine {
     b.pri = b.resc>0 ? 500+b.resc*100 : 0;
     this.ds(b.mid,this.day).checkedIn++;
     const p=this.qpos(b);
-    this.notify(b.fid,`✅ Checked in | ${tok} | Queue #${p} | ~${p*20} min wait`);
+    this.notify(b.fid,`✅ Checked in | ${tok} | Queue #${p}`);
     return true;
   }
 
@@ -195,7 +195,7 @@ class Engine {
     if(!this.move(n,Status.WEIGHING))return null;
     this.notify(n.fid,`🔔 YOUR TURN! Token ${n.tok} → Weighing Bridge`);
     this.queue(mid).slice(0,2).forEach((b,i)=>
-      this.notify(b.fid,`Queue update: #${i+1}, ~${(i+1)*20} min`));
+      this.notify(b.fid,`Queue update: Position #${i+1}`));
     return n;
   }
 
