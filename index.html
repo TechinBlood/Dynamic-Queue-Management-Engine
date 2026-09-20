@@ -577,21 +577,21 @@ async function main() {
   const e=seed();
 
   console.log(`
-╔══════════════════════════════════════════════════════════════╗
-║  MANDIFLOW: MANDI QUEUE ENGINE — Interactive Sandbox                ║
-║  SIH 2026 | PS 26032 | DoCA                                ║
-║                                                             ║
-║  Pre-loaded: 3 Mandis (KNL, NLK, GHR) | 15 Farmers (F01-15)║
-║  You control everything. Break it. Find the edge cases.     ║
-╚══════════════════════════════════════════════════════════════╝
+╔════════════════════════════════════════════════════════════════╗
+║  MANDIFLOW: DYNAMIC QUEUE & DISRUPTION ENGINE                  ║
+║  SIH 2026 | PS 26032 | Ministry of Consumer Affairs (DoCA)     ║
+║                                                                ║
+║  Pre-loaded: 3 Mandis (KNL, NLK, GHR) | 15 Farmers (F01-F15)   ║
+║  Deterministic Fair Scheduling | Zero-Barrier Ingress          ║
+╚════════════════════════════════════════════════════════════════╝
 `);
   e.showAll();
   e.showFarmers();
 
   while(true) {
-    console.log(`${'─'.repeat(62)}`);
-    console.log(`  DAY DAY ${e.day}                         MANDI QUEUE ENGINE`);
-    console.log(`${'─'.repeat(62)}`);
+    console.log(`${'─'.repeat(64)}`);
+    console.log(`  DAY ${String(e.day).padEnd(4)}                      MANDIFLOW QUEUE ENGINE`);
+    console.log(`${'─'.repeat(64)}`);
     console.log(`  ── FARMER ACTIONS ──              ── OPERATOR ACTIONS ──`);
     console.log(`  1.  Book Slot                     7.  Call Next in Queue`);
     console.log(`  2.  Cancel Booking                8.  Accept Crop (Weigh)`);
