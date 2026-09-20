@@ -96,9 +96,17 @@
       }
     };
 
+    window.process = { stdin: {}, stdout: {}, env: {} };
+    const process = window.process;
+    console.error = function(...args) {
+      const msg = args.map(x => typeof x === 'object' ? JSON.stringify(x) : String(x)).join(' ');
+      term.writeln('\x1b[31m' + msg.replace(/\r?\n/g, '\r\n') + '\x1b[0m');
+    };
+
     // Ensure DOM is fully mounted before running engine
     setTimeout(() => {
       resizeTerm();
+      term.writeln('\x1b[32m$ node mandi_sandbox.js\x1b[0m\r\n');
       try {
         /**
  * ================================================================
