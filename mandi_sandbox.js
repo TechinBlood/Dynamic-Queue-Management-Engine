@@ -472,7 +472,7 @@ async function main() {
 
   console.log(`
 ╔════════════════════════════════════════════════════════════════╗
-║  MANDIFLOW: DYNAMIC QUEUE & DISRUPTION ENGINE                  ║
+║  PROCUREMENT ENGINE: DYNAMIC QUEUE & DISRUPTION MANAGEMENT     ║
 ║  SIH 2026 | PS 26032 | Ministry of Consumer Affairs (DoCA)     ║
 ║                                                                ║
 ║  Pre-loaded: 3 Mandis (KNL, NLK, GHR) | 15 Farmers (F01-F15)   ║
@@ -484,7 +484,7 @@ async function main() {
 
   while(true) {
     console.log(`${'─'.repeat(64)}`);
-    console.log(`  DAY ${String(e.day).padEnd(4)}                      MANDIFLOW QUEUE ENGINE`);
+    console.log(`  DAY ${String(e.day).padEnd(4)}                      PROCUREMENT QUEUE ENGINE`);
     console.log(`${'─'.repeat(64)}`);
     console.log(`  ── FARMER ACTIONS ──              ── OPERATOR ACTIONS ──`);
     console.log(`  1.  Book Slot                     7.  Call Next in Queue`);
